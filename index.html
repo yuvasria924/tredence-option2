@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Workflow Engine UI</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 20px auto; }
+    h1 { margin-bottom: 0.2rem; }
+    textarea { width: 100%; min-height: 120px; }
+    .card { border: 1px solid #ccc; padding: 16px; margin-bottom: 16px; border-radius: 8px; }
+    .row { margin: 8px 0; }
+    button { padding: 6px 12px; cursor: pointer; }
+    pre { background: #111; color: #0f0; padding: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>AI Workflow Engine</h1>
+  <p>Backend must be running at <code>http://127.0.0.1:8000</code></p>
+
+  <div class="card">
+    <h2>Summarize Text</h2>
+    <div class="row">
+      <label>Text:</label><br />
+      <textarea id="sum-text"></textarea>
+    </div>
+    <div class="row">
+      <label>Max length:</label>
+      <input type="number" id="sum-max" value="200" />
+    </div>
+    <button onclick="runSummarize()">Run Summarization</button>
+    <h3>Output</h3>
+    <pre id="sum-output"></pre>
+  </div>
+
+  <div class="card">
+    <h2>Code Review</h2>
+    <div class="row">
+      <label>Code:</label><br />
+      <textarea id="code-text"></textarea>
+    </div>
+    <div class="row">
+      <label>Quality threshold (0–10):</label>
+      <input type="number" id="code-threshold" value="7" />
+    </div>
+    <button onclick="runCodeReview()">Run Code Review</button>
+    <h3>Output</h3>
+    <pre id="code-output"></pre>
+  </div>
+
+  <script>
+    const BASE = "http://127.0.0.1:8000";
+
+    async function runSummarize() {
+      const text = document.getElementById("sum-text").value;
+      const maxLen = Number(document.getElementById("sum-max").value) || 200;
+      const out = document.getElementById("sum-output");
+      out.textContent = "Running...";
+
+      try {
+        const createRes = await fetch(`${BASE}/graph/create/summarize`, { method: "POST" });
+        const { graph_id } = await createRes.json();
+
+        const runRes = await fetch(`${BASE}/graph/run/summarize?graph_id=${graph_id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, max_length: maxLen }),
+        });
+
+        const data = await runRes.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = "Error: " + err;
+      }
+    }
+
+    async function runCodeReview() {
+      const code = document.getElementById("code-text").value;
+      const threshold = Number(document.getElementById("code-threshold").value) || 7;
+      const out = document.getElementById("code-output");
+      out.textContent = "Running...";
+
+      try {
+        const createRes = await fetch(`${BASE}/graph/create/code-review`, { method: "POST" });
+        const { graph_id } = await createRes.json();
+
+        const runRes = await fetch(`${BASE}/graph/run/code-review?graph_id=${graph_id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, threshold }),
+        });
+
+        const data = await runRes.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = "Error: " + err;
+      }
+    }
+  </script>
+</body>
+</html>
